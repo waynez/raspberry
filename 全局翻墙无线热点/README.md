@@ -44,36 +44,77 @@ date
 sudo apt update
 ```
 
-# 安装Shadowsocks
+# 安装v2ray
 
 ```
-sudo apt install shadowsocks
+wget https://install.direct/go.sh
+sudo bash go.sh
 ```
-## 配置Shadowsocks客户端
-
+## 配置v2ray客户端
+修改`/etc/v2ray/config.json`
+1. 填入远端v2ray server(VPS)信息
+2. 在本机1080端口启动socks5代理
 ```
-# 填入远端Shadowsocks Server(VPS)信息
-sudo vi /etc/shadowsocks/local.json
+{
+  "log": {
+    "access": "/var/log/v2ray/access.log",
+    "error": "/var/log/v2ray/error.log",
+    "loglevel": "warning"
+  },
+  "inbounds": [{
+    "port": 1080,
+    "listen": "0.0.0.0",
+    "protocol": "socks",
+    "settings": {
+      "auth": "noauth",
+      "udp": false
+    }
+  }],
+  "outbounds": [{
+    "protocol": "vmess",
+    "settings": {
+        "vnext": [{
+          "address": "your_remote_vps",
+          "port": 19368,
+          "users": [{
+              "id": "cc4e4ab1-e417-4618-8b82-f92065415407",
+              "alterId": 64,
+              "security": "auto"
+          }]
+        }]
+    }
+  },{
+    "protocol": "blackhole",
+    "settings": {},
+    "tag": "blocked"
+  }],
+  "routing": {
+    "rules": [
+      {
+        "type": "field",
+        "ip": ["geoip:private"],
+        "outboundTag": "blocked"
+      }
+    ]
+  }
+}
 ```
 
 ## 启动服务并持久化
 ```
-# 配置systemmd，ExecStart填入配置文件路径
-sudo vi /lib/systemd/system/shadowsocks-local@.service
-
 # 启动服务并检查状态
-sudo systemctl start shadowsocsk-local@.
-sudo systemctl status shadowsocks-local@.
+sudo systemctl start v2ray
+sudo systemctl status v2ray
 curl cip.cc; curl --socks5 localhost:1080 cip.cc
 
 # 设置开机启动
-sudo systemctl enable shadowsocks-local@.
+sudo systemctl enable v2ray
 ```
 
 ## 检查
 ```
 sudo reboot
-sudo systemctl status shadowsocks-local@.
+sudo systemctl status v2ray
 curl cip.cc; curl --socks localhost:1080 cip.cc
 ```
 
@@ -277,25 +318,25 @@ sudo systemctl status redsocks
 
 ```
 # 新建规则链
-sudo iptables -t nat -N SHADOWSOCKS
+sudo iptables -t nat -N SOCKS
 
 # 忽略节点域名, 这里需要将自己的VPS IP填入
-sudo iptables -t nat -A SHADOWSOCKS -d ${VPS_IP} -j RETURN
+sudo iptables -t nat -A SOCKS -d ${VPS_IP} -j RETURN
 
 # 忽略局域网地址
-sudo iptables -t nat -A SHADOWSOCKS -d 0.0.0.0/8 -j RETURN
-sudo iptables -t nat -A SHADOWSOCKS -d 10.0.0.0/8 -j RETURN
-sudo iptables -t nat -A SHADOWSOCKS -d 127.0.0.0/8 -j RETURN
-sudo iptables -t nat -A SHADOWSOCKS -d 169.254.0.0/16 -j RETURN
-sudo iptables -t nat -A SHADOWSOCKS -d 172.16.0.0/12 -j RETURN
-sudo iptables -t nat -A SHADOWSOCKS -d 192.168.0.0/16 -j RETURN
-sudo iptables -t nat -A SHADOWSOCKS -d 224.0.0.0/4 -j RETURN
-sudo iptables -t nat -A SHADOWSOCKS -d 240.0.0.0/4 -j RETURN
+sudo iptables -t nat -A SOCKS -d 0.0.0.0/8 -j RETURN
+sudo iptables -t nat -A SOCKS -d 10.0.0.0/8 -j RETURN
+sudo iptables -t nat -A SOCKS -d 127.0.0.0/8 -j RETURN
+sudo iptables -t nat -A SOCKS -d 169.254.0.0/16 -j RETURN
+sudo iptables -t nat -A SOCKS -d 172.16.0.0/12 -j RETURN
+sudo iptables -t nat -A SOCKS -d 192.168.0.0/16 -j RETURN
+sudo iptables -t nat -A SOCKS -d 224.0.0.0/4 -j RETURN
+sudo iptables -t nat -A SOCKS -d 240.0.0.0/4 -j RETURN
 
 # 流量转发到redsocks
-sudo iptables -t nat -A SHADOWSOCKS -p tcp -j REDIRECT --to-ports 12345
-sudo iptables -t nat -A OUTPUT -p tcp -j SHADOWSOCKS
-sudo iptables -t nat -A PREROUTING -p tcp -j SHADOWSOCKS
+sudo iptables -t nat -A SOCKS -p tcp -j REDIRECT --to-ports 12345
+sudo iptables -t nat -A OUTPUT -p tcp -j SOCKS
+sudo iptables -t nat -A PREROUTING -p tcp -j SOCKS
 ```
 
 ## 持久化
@@ -311,7 +352,7 @@ sudo systemctl status netfilter-persistent
 ```
 
 ## 检查
-1. raspberrypi.local上的tcp流量都自动转发至redsocks的12345端口，再由redsocks服务自动转发至shadowsocks，并最终离开本机
+1. raspberrypi.local上的tcp流量都自动转发至redsocks的12345端口，再由redsocks服务自动转发至v2ray，并最终离开本机
 ```
 # 以下命令应该显示远端VPS的IP
 curl cip.cc
