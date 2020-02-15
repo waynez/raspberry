@@ -151,7 +151,7 @@ Address: 180.101.49.12
 
 ## 使用dnsmasq为本机提供dns解析服务
 ```bash
-sudo apt-get install dnsmasq
+sudo apt-get install dnsmasq -y
 ```
 
 检查当前DNS解析服务，由本机dnsmasq在提供（127.0.0.1#53）
@@ -267,7 +267,7 @@ sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
 ### 2. 安装redsocks
 
 ```bash
-sudo apt-get install redsocks
+sudo apt-get install redsocks -y
 sudo systemctl stop redsocks
 ```
 
@@ -294,9 +294,10 @@ sudo systemctl start redsocks
 # IPSet，为gfw准备ipset和dnsmasq规则
 
 ```bash
-sudo apt-get install git ipset ssh
+sudo apt-get install git ipset ssh -y
 git clone https://github.com/cokebar/gfwlist2dnsmasq.git
 cd gfwlist2dnsmasq/
+# Note: 以下命令如果出错，可能是因为被墙，更改脚本使用梯子操作
 bash gfwlist2dnsmasq.sh -o gfwlist.conf -s gfwlist -p 15353 # -o 为输出文件， -s 为设置 ipset 集合名，-p 为 dns 端口
 sudo cp gfwlist.conf /etc/dnsmasq.d/
 ```
@@ -327,8 +328,8 @@ sudo iptables -t nat -A OUTPUT -p tcp -m set --match-set gfwlist dst -j REDIRECT
 ### 持久化ipset和iptables
 
 ```bash
-sudo apt-get install ipset-persistent
-sudo apt-get install iptables-persistent
+sudo apt-get install ipset-persistent -y
+sudo apt-get install iptables-persistent -y
 ```
 
 ### 检查
@@ -350,7 +351,7 @@ curl www.google.com
 ### 安装hostapd
 
 ```
-sudo apt install hostapd
+sudo apt install hostapd -y
 ```
 
 ### 停止服务，并进行配置
